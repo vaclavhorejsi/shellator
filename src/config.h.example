@@ -1,0 +1,17 @@
+// Wifi connection settings
+#define WIFI_SSID ""
+#define WIFI_PASS ""
+
+// OTA network name
+#define OTA_NAME "shellator25"
+
+// NTP server
+#define NTP_SERVER "tik.cesnet.cz"
+
+// MQTT connection
+#define MQTT_NAME ""
+#define MQTT_PORT 1883
+#define MQTT_USER ""
+#define MQTT_PASS ""
+#define MQTT_CLIENT_ID "shellator25"
+#define MQTT_PREFIX ""
