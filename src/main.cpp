@@ -13,28 +13,46 @@
 
 #include "config.h"
 
-// TODO: Blink
-// TODO: Status message random start
-// TODO: Anouncement every 24 hours?
-// TODO: Merge S1, S25 and Si3 code into one
-// TODO: Enhance S25 with power consumtion meter
-// TODO: Add REST API along MQTT
-// TODO: Add fallback script what to do when there is no MQTT connection
+#define FW "1.4.0"
 
-#define HW "Shelly 2.5"
-#define FW "1.3.0"
+#if defined SHELLY1
+  #define HW "Shelly 1"
+  #define HWPREFIX "1"
+
+  #define PIN_RELAY1 4
+  #define PIN_BTN1 5
+  #define PIN_BTN2 0
+
+  OneButton btn1 = OneButton(PIN_BTN1, false, false);
+  OneButton btn2 = OneButton(PIN_BTN2, true, true);
+
+#elif defined SHELLYI3
+  #define HW "Shelly i3"
+  #define HWPREFIX "i3"
+
+  #define PIN_BTN1 14
+  #define PIN_BTN2 12
+  #define PIN_BTN3 13
+
+  OneButton btn1 = OneButton(PIN_BTN1, false, false);
+  OneButton btn2 = OneButton(PIN_BTN2, false, false);
+  OneButton btn3 = OneButton(PIN_BTN3, false, false);
+
+#elif defined SHELLY25
+  #define HW "Shelly 25"
+  #define HWPREFIX "25"
+
+  #define PIN_RELAY1 4
+  #define PIN_RELAY2 15
+  #define PIN_BTN1 13
+  #define PIN_BTN2 5
+
+  OneButton btn1 = OneButton(PIN_BTN1, false, false);
+  OneButton btn2 = OneButton(PIN_BTN2, false, false);
+#endif
 
 String chipId = String(ESP.getChipId(), HEX);
 String mqttPrefix = MQTT_PREFIX + chipId;
-
-#define PIN_RELAY1 4
-#define PIN_RELAY2 15
-
-#define PIN_BTN1 13
-#define PIN_BTN2 5
-
-OneButton btn1 = OneButton(PIN_BTN1, false, false);
-OneButton btn2 = OneButton(PIN_BTN2, false, false);
 
 ESP8266WiFiMulti wifiMulti;
 WiFiClient wifiClient;
@@ -44,7 +62,7 @@ Scheduler ts;
 void setupWiFi() {
   if (WiFi.getMode() != WIFI_STA) WiFi.mode(WIFI_STA);
   WiFi.persistent(false);
-  WiFi.hostname(String(OTA_NAME) + "-" + chipId);
+  WiFi.hostname(String(OTA_NAME) + String(HWPREFIX) + "-" + chipId);
   wifiMulti.addAP(WIFI_SSID, WIFI_PASS);
 }
 
@@ -58,7 +76,7 @@ void uptimeHandle() {
 
 void setupOTA() {
   char name[50];
-  String(String(OTA_NAME) + "-" + chipId).toCharArray(name, sizeof(name));
+  String(String(OTA_NAME) + String(HWPREFIX) + "-" + chipId).toCharArray(name, sizeof(name));
 
   MDNS.setInstanceName(name);  
   ArduinoOTA.setHostname(name);
@@ -171,6 +189,7 @@ void mqttMessage(String &topic, String &payload) {
 //  DynamicJsonDocument doc(4096);
 //  deserializeJson(doc, payload);
 
+#if defined SHELLY1 || defined SHELLY25
   if (topic == (mqttPrefix + "/cmd/relay1")) {
     if (payload == "on") {
       digitalWrite(PIN_RELAY1, 1);
@@ -183,8 +202,11 @@ void mqttMessage(String &topic, String &payload) {
     }
 
     mqttClient.publish(mqttPrefix + "/relay1", "{\"power\":\"" + String(digitalRead(PIN_RELAY1)?"on":"off") + "\"}");
+  }
+#endif
 
-  } else if (topic == (mqttPrefix + "/cmd/relay2")) {
+#if defined SHELLY25
+  if (topic == (mqttPrefix + "/cmd/relay2")) {
     if (payload == "on") {
       digitalWrite(PIN_RELAY2, 1);
     } else if (payload == "off") {
@@ -196,10 +218,15 @@ void mqttMessage(String &topic, String &payload) {
     }
 
     mqttClient.publish(mqttPrefix + "/relay2", "{\"power\":\"" + String(digitalRead(PIN_RELAY2)?"on":"off") + "\"}");
-
-  } else if (topic == (mqttPrefix + "/cmd/store")) {
+  }
+#endif
+  
+  if (topic == (mqttPrefix + "/cmd/store")) {
     deserializeJson(storage, payload);
+  }
 
+  if (topic == (mqttPrefix + "/cmd/reconnect")) {
+    WiFi.reconnect();
   }
 }
 
@@ -236,8 +263,12 @@ void systemStatus() {
   serializeJson(doc2, output);
   mqttClient.publish(mqttPrefix + "/status", output, true, 0);
 
+#if defined SHELLY1 || defined SHELLY25
   mqttClient.publish(mqttPrefix + "/relay1", "{\"power\":\"" + String(digitalRead(PIN_RELAY1)?"on":"off") + "\"}");
+#endif
+#if defined SHELLY25
   mqttClient.publish(mqttPrefix + "/relay2", "{\"power\":\"" + String(digitalRead(PIN_RELAY2)?"on":"off") + "\"}");
+#endif
 }
 
 void mqttPing() {
@@ -256,8 +287,12 @@ void connectMQTT() {
     char cClientId[50];
     clientId.toCharArray(cClientId, sizeof(cClientId));
     if (mqttClient.connect(cClientId, MQTT_USER, MQTT_PASS)) {
+#if defined SHELLY1 || defined SHELLY25
       mqttClient.subscribe(mqttPrefix + "/cmd/relay1");
+#endif
+#if defined SHELLY25
       mqttClient.subscribe(mqttPrefix + "/cmd/relay2");
+#endif
       mqttClient.subscribe(mqttPrefix + "/cmd/store");
       mqttClient.publish(mqttPrefix, "online", true, 0);  
       mqttClient.publish(mqttPrefix + "/announcement", "{\"hello\":\"world\"}", false, 0);
@@ -277,11 +312,14 @@ void setupMQTT() {
   taskMqttPing.enable();
 }
 
+#if defined SHELLY1 || defined SHELLY25 || defined SHELLYI3
 void handleBtn1Click() {
   mqttClient.publish(mqttPrefix + "/button1", "{\"clicked\":\"single\"}");
+  #if defined SHELLY1 || defined SHELLY25
   if (WiFi.status() != WL_CONNECTED || !mqttClient.connected()) {
     digitalWrite(PIN_RELAY1, !digitalRead(PIN_RELAY1));
   }
+  #endif
 }
 
 void handleBtn1DoubleClick() {
@@ -301,12 +339,16 @@ void handleBtn1MultiClick() {
     mqttClient.publish(mqttPrefix + "/button1", "{\"clicked\":\"many\"}");
   }
 }
+#endif
 
+#if defined SHELLY25 || defined SHELLYI3
 void handleBtn2Click() {
   mqttClient.publish(mqttPrefix + "/button2", "{\"clicked\":\"single\"}");
+  #if defined SHELLY25
   if (WiFi.status() != WL_CONNECTED || !mqttClient.connected()) {
     digitalWrite(PIN_RELAY2, !digitalRead(PIN_RELAY2));
   }
+  #endif
 }
 
 void handleBtn2DoubleClick() {
@@ -326,12 +368,41 @@ void handleBtn2MultiClick() {
     mqttClient.publish(mqttPrefix + "/button2", "{\"clicked\":\"many\"}");
   }
 }
+#endif
+
+#if defined SHELLYI3
+void handleBtn3Click() {
+  mqttClient.publish(mqttPrefix + "/button3", "{\"clicked\":\"single\"}");
+}
+
+void handleBtn3DoubleClick() {
+  mqttClient.publish(mqttPrefix + "/button3", "{\"clicked\":\"double\"}");
+}
+
+void handleBtn3LongPress() {
+  mqttClient.publish(mqttPrefix + "/button3", "{\"clicked\":\"long\"}");
+}
+
+void handleBtn3MultiClick() {
+  if (btn2.getNumberClicks() == 3) {
+    mqttClient.publish(mqttPrefix + "/button3", "{\"clicked\":\"triple\"}");
+  } else if (btn2.getNumberClicks() == 4) {
+    mqttClient.publish(mqttPrefix + "/button3", "{\"clicked\":\"quadruple\"}");
+  } else {
+    mqttClient.publish(mqttPrefix + "/button3", "{\"clicked\":\"many\"}");
+  }
+}
+#endif
 
 void setup() {
   delay(100);
 
+#if defined SHELLY1 || defined SHELLY25
   pinMode(PIN_RELAY1, OUTPUT);
+#endif
+#if defined SHELLY25
   pinMode(PIN_RELAY2, OUTPUT);
+#endif
 
   taskUptime.enable();
 
@@ -340,17 +411,29 @@ void setup() {
   setupNtp();
   setupMQTT();
 
+#if defined SHELLY1 || defined SHELLY25 || defined SHELLYI3
   btn1.setClickTicks(300);
   btn1.attachClick(handleBtn1Click);
   btn1.attachDoubleClick(handleBtn1DoubleClick);
   btn1.attachLongPressStart(handleBtn1LongPress);
   btn1.attachMultiClick(handleBtn1MultiClick);
+#endif
 
+#if defined SHELLY25 || defined SHELLYI3
   btn2.setClickTicks(300);
   btn2.attachClick(handleBtn2Click);
   btn2.attachDoubleClick(handleBtn2DoubleClick);
   btn2.attachLongPressStart(handleBtn2LongPress);
   btn2.attachMultiClick(handleBtn2MultiClick);
+#endif
+
+#if defined SHELLYI3
+  btn3.setClickTicks(300);
+  btn3.attachClick(handleBtn3Click);
+  btn3.attachDoubleClick(handleBtn3DoubleClick);
+  btn3.attachLongPressStart(handleBtn3LongPress);
+  btn3.attachMultiClick(handleBtn3MultiClick);
+#endif
 }
 
 void loop() {
@@ -358,6 +441,13 @@ void loop() {
   ArduinoOTA.handle();
   ts.execute();
   mqttClient.loop();
+#if defined SHELLY1 || defined SHELLY25 || defined SHELLYI3
   btn1.tick();
+#endif
+#if defined SHELLY25 || defined SHELLYI3
   btn2.tick();
+#endif
+#if defined SHELLYI3
+  btn3.tick();
+#endif
 }

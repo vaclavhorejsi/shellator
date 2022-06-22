@@ -1,9 +1,14 @@
+// Pick device type
+#define SHELLY1
+// #define SHELLY25
+// #define SHELLYI3
+
 // Wifi connection settings
 #define WIFI_SSID ""
 #define WIFI_PASS ""
 
 // OTA network name
-#define OTA_NAME "shellator25"
+#define OTA_NAME "shellator"
 
 // NTP server
 #define NTP_SERVER "tik.cesnet.cz"
@@ -13,5 +18,5 @@
 #define MQTT_PORT 1883
 #define MQTT_USER ""
 #define MQTT_PASS ""
-#define MQTT_CLIENT_ID "shellator25"
+#define MQTT_CLIENT_ID "shellator"
 #define MQTT_PREFIX ""
