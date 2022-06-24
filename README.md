@@ -19,7 +19,7 @@ Custom Shelly firmware
 or
 
 * ```docker build -t shellator .```
-* ```docker run -ti --volume ./:/app shellator```
+* ```docker run -ti --volume $PWD:/app shellator```
 
 ## **OTA Upload**
 * TODO
