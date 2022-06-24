@@ -13,7 +13,7 @@
 
 #include "config.h"
 
-#define FW "1.4.0"
+#define FW "1.5.0"
 
 #if defined SHELLY1
   #define HW "Shelly 1"

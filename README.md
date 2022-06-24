@@ -9,12 +9,17 @@ Custom Shelly firmware
 * MQTT broker
 
 ## **Configuration**
-* Copy src/config.h.example to src/config.h
-* Edit src/config.h for your needs
+* Copy ```src/config.h.example``` to ```src/config.h```
+* Edit ```src/config.h``` for your needs
 
 ## **Instalation**
 * Compile in VSC with Platformio or Arduino IDE for ESP8266
-* Upload over cable or OTA
+* Upload over cable or OTA from VSC
+
+or
+
+* ```docker build -t shellator .```
+* ```docker run -ti --volume ./:/app shellator```
 
 ## **OTA Upload**
 * TODO
@@ -32,6 +37,8 @@ Custom Shelly firmware
 
 
 ## **Changelog**
+* 1.5.0
+  * Build in docker container
 * 1.4.0
-  * Merged S1, S25 and Si3 code into one
+  * Merged S1, Si3 and S25 code into one
   * Added /cmd/reconnect - restart wifi connection
