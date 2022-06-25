@@ -305,7 +305,7 @@ void setupMQTT() {
   char mqttPrefixChr[50];
   mqttPrefix.toCharArray(mqttPrefixChr, sizeof(mqttPrefixChr));
   mqttClient.setWill(mqttPrefixChr, "offline", true, 0);
-  mqttClient.begin(MQTT_NAME, MQTT_PORT, wifiClient);
+  mqttClient.begin(MQTT_SERVER, MQTT_PORT, wifiClient);
   mqttClient.onMessage(mqttMessage);
 
   taskMqttHandle.enable();
@@ -341,7 +341,7 @@ void handleBtn1MultiClick() {
 }
 #endif
 
-#if defined SHELLY25 || defined SHELLYI3
+#if defined SHELLY1 || defined SHELLY25 || defined SHELLYI3
 void handleBtn2Click() {
   mqttClient.publish(mqttPrefix + "/button2", "{\"clicked\":\"single\"}");
   #if defined SHELLY25
@@ -419,7 +419,7 @@ void setup() {
   btn1.attachMultiClick(handleBtn1MultiClick);
 #endif
 
-#if defined SHELLY25 || defined SHELLYI3
+#if defined SHELLY1 || defined SHELLY25 || defined SHELLYI3
   btn2.setClickTicks(300);
   btn2.attachClick(handleBtn2Click);
   btn2.attachDoubleClick(handleBtn2DoubleClick);
@@ -444,7 +444,7 @@ void loop() {
 #if defined SHELLY1 || defined SHELLY25 || defined SHELLYI3
   btn1.tick();
 #endif
-#if defined SHELLY25 || defined SHELLYI3
+#if defined SHELLY1 || defined SHELLY25 || defined SHELLYI3
   btn2.tick();
 #endif
 #if defined SHELLYI3
