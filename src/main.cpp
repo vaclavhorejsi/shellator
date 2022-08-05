@@ -13,7 +13,7 @@
 
 #include "config.h"
 
-#define FW "1.5.0"
+#define FW "1.6.0"
 
 #if defined SHELLY1
   #define HW "Shelly 1"
@@ -242,6 +242,7 @@ void systemStatus() {
   JsonObject wifi = doc.createNestedObject("wifi");
   wifi["ssid"] = WiFi.SSID();
   wifi["rssi"] = WiFi.RSSI();
+  wifi["bssid"] = WiFi.BSSIDstr();
 
   String output;
   serializeJson(doc, output);
@@ -294,6 +295,7 @@ void connectMQTT() {
       mqttClient.subscribe(mqttPrefix + "/cmd/relay2");
 #endif
       mqttClient.subscribe(mqttPrefix + "/cmd/store");
+      mqttClient.subscribe(mqttPrefix + "/cmd/reconnect");
       mqttClient.publish(mqttPrefix, "online", true, 0);  
       mqttClient.publish(mqttPrefix + "/announcement", "{\"hello\":\"world\"}", false, 0);
       systemStatus();    
