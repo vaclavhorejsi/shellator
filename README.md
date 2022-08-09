@@ -37,6 +37,8 @@ or
 
 
 ## **Changelog**
+* 1.6.0
+  * Added bssid into status message
 * 1.5.0
   * Build in docker container
 * 1.4.0
